@@ -1,0 +1,39 @@
+
+[
+  {
+    "_id": "chicken_001",
+    "breed": "白羽鸡",
+    "count": 1000,
+    "age": 45,
+    "mortality": 2.5,
+    "notes": "健康状态良好，生长正常",
+    "location": "齐伯场地",
+    "status": "active",
+    "createdAt": "2024-01-15T08:00:00.000Z",
+    "updatedAt": "2024-01-15T08:00:00.000Z"
+  },
+  {
+    "_id": "chicken_002",
+    "breed": "肉鸡",
+    "count": 800,
+    "age": 60,
+    "mortality": 1.8,
+    "notes": "饲料转化率高",
+    "location": "大屯场地",
+    "status": "active",
+    "createdAt": "2024-01-15T08:00:00.000Z",
+    "updatedAt": "2024-01-15T08:00:00.000Z"
+  },
+  {
+    "_id": "chicken_003",
+    "breed": "种鸡",
+    "count": 500,
+    "age": 120,
+    "mortality": 0.5,
+    "notes": "种鸡培育阶段",
+    "location": "十字场地",
+    "status": "active",
+    "createdAt": "2024-01-15T08:00:00.000Z",
+    "updatedAt": "2024-01-15T08:00:00.000Z"
+  }
+]

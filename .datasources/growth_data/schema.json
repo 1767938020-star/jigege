@@ -1,0 +1,48 @@
+
+{
+  "name": "growth_data",
+  "title": "生长数据",
+  "schemas": [
+    {
+      "name": "location",
+      "title": "场地",
+      "type": "String"
+    },
+    {
+      "name": "week",
+      "title": "周数",
+      "type": "String"
+    },
+    {
+      "name": "weight",
+      "title": "体重",
+      "type": "Number"
+    },
+    {
+      "name": "notes",
+      "title": "备注",
+      "type": "MultiLineString"
+    },
+    {
+      "name": "measure_time",
+      "title": "测量时间",
+      "type": "DateTime",
+      "format": "string"
+    },
+    {
+      "name": "chicken_id",
+      "title": "鸡只编号",
+      "type": "String"
+    },
+    {
+      "name": "growth_rate",
+      "title": "增长率",
+      "type": "Number"
+    },
+    {
+      "name": "cycle",
+      "title": "饲养周期",
+      "type": "Number"
+    }
+  ]
+}

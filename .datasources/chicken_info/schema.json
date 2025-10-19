@@ -1,0 +1,51 @@
+
+{
+  "name": "chicken_info",
+  "title": "鸡只信息",
+  "schemas": [
+    {
+      "name": "breed",
+      "title": "品种",
+      "type": "String"
+    },
+    {
+      "name": "count",
+      "title": "数量",
+      "type": "Number"
+    },
+    {
+      "name": "age",
+      "title": "日龄",
+      "type": "Number"
+    },
+    {
+      "name": "mortality",
+      "title": "死亡率",
+      "type": "Number"
+    },
+    {
+      "name": "notes",
+      "title": "备注",
+      "type": "MultiLineString"
+    },
+    {
+      "name": "death_records",
+      "title": "死亡记录",
+      "type": "Array",
+      "items": {
+        "type": "Object"
+      }
+    },
+    {
+      "name": "location",
+      "title": "场地",
+      "type": "String"
+    },
+    {
+      "name": "status",
+      "title": "状态",
+      "type": "String"
+    }
+  ]
+}
+  

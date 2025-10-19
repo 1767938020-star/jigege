@@ -1,0 +1,36 @@
+
+[
+  {
+    "_id": "feed_001",
+    "location": "齐伯场地",
+    "feed_type": "玉米饲料",
+    "amount": "50kg",
+    "time": "2024-01-15T08:00:00.000Z",
+    "notes": "早晨喂养",
+    "chicken_id": "chicken_001",
+    "createdAt": "2024-01-15T08:00:00.000Z",
+    "updatedAt": "2024-01-15T08:00:00.000Z"
+  },
+  {
+    "_id": "feed_002",
+    "location": "大屯场地",
+    "feed_type": "豆粕饲料",
+    "amount": "40kg",
+    "time": "2024-01-15T14:00:00.000Z",
+    "notes": "下午喂养",
+    "chicken_id": "chicken_002",
+    "createdAt": "2024-01-15T14:00:00.000Z",
+    "updatedAt": "2024-01-15T14:00:00.000Z"
+  },
+  {
+    "_id": "feed_003",
+    "location": "十字场地",
+    "feed_type": "专用种鸡饲料",
+    "amount": "30kg",
+    "time": "2024-01-15T10:00:00.000Z",
+    "notes": "种鸡专用饲料",
+    "chicken_id": "chicken_003",
+    "createdAt": "2024-01-15T10:00:00.000Z",
+    "updatedAt": "2024-01-15T10:00:00.000Z"
+  }
+]

@@ -1,0 +1,39 @@
+
+{
+  "name": "feeding_records",
+  "title": "喂养记录",
+  "schemas": [
+    {
+      "name": "location",
+      "title": "场地",
+      "type": "String"
+    },
+    {
+      "name": "feed_type",
+      "title": "饲料类型",
+      "type": "String"
+    },
+    {
+      "name": "amount",
+      "title": "喂养量",
+      "type": "String"
+    },
+    {
+      "name": "time",
+      "title": "喂养时间",
+      "type": "DateTime",
+      "format": "string"
+    },
+    {
+      "name": "notes",
+      "title": "备注",
+      "type": "MultiLineString"
+    },
+    {
+      "name": "chicken_id",
+      "title": "鸡只编号",
+      "type": "String"
+    }
+  ]
+}
+  

@@ -1,0 +1,51 @@
+
+[
+  {
+    "_id": "inventory_001",
+    "name": "玉米饲料",
+    "type": "饲料",
+    "quantity": 500,
+    "threshold": 100,
+    "location": "齐伯场地",
+    "status": "normal",
+    "unit": "kg",
+    "createdAt": "2024-01-15T08:00:00.000Z",
+    "updatedAt": "2024-01-15T08:00:00.000Z"
+  },
+  {
+    "_id": "inventory_002",
+    "name": "豆粕饲料",
+    "type": "饲料",
+    "quantity": 300,
+    "threshold": 50,
+    "location": "大屯场地",
+    "status": "normal",
+    "unit": "kg",
+    "createdAt": "2024-01-15T08:00:00.000Z",
+    "updatedAt": "2024-01-15T08:00:00.000Z"
+  },
+  {
+    "_id": "inventory_003",
+    "name": "种鸡专用饲料",
+    "type": "饲料",
+    "quantity": 200,
+    "threshold": 30,
+    "location": "十字场地",
+    "status": "normal",
+    "unit": "kg",
+    "createdAt": "2024-01-15T08:00:00.000Z",
+    "updatedAt": "2024-01-15T08:00:00.000Z"
+  },
+  {
+    "_id": "inventory_004",
+    "name": "疫苗",
+    "type": "药品",
+    "quantity": 50,
+    "threshold": 10,
+    "location": "齐伯场地",
+    "status": "normal",
+    "unit": "支",
+    "createdAt": "2024-01-15T08:00:00.000Z",
+    "updatedAt": "2024-01-15T08:00:00.000Z"
+  }
+]

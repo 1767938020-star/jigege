@@ -1,0 +1,39 @@
+
+[
+  {
+    "_id": "death_001",
+    "death_count": 5,
+    "death_date": "2024-01-14T00:00:00.000Z",
+    "death_reason": "疾病感染",
+    "notes": "发现及时处理",
+    "record_time": "2024-01-14T10:00:00.000Z",
+    "chicken_id": "chicken_001",
+    "location": "齐伯场地",
+    "createdAt": "2024-01-14T10:00:00.000Z",
+    "updatedAt": "2024-01-14T10:00:00.000Z"
+  },
+  {
+    "_id": "death_002",
+    "death_count": 3,
+    "death_date": "2024-01-13T00:00:00.000Z",
+    "death_reason": "意外死亡",
+    "notes": "设备故障导致",
+    "record_time": "2024-01-13T15:00:00.000Z",
+    "chicken_id": "chicken_002",
+    "location": "大屯场地",
+    "createdAt": "2024-01-13T15:00:00.000Z",
+    "updatedAt": "2024-01-13T15:00:00.000Z"
+  },
+  {
+    "_id": "death_003",
+    "death_count": 1,
+    "death_date": "2024-01-12T00:00:00.000Z",
+    "death_reason": "自然死亡",
+    "notes": "老年种鸡",
+    "record_time": "2024-01-12T09:00:00.000Z",
+    "chicken_id": "chicken_003",
+    "location": "十字场地",
+    "createdAt": "2024-01-12T09:00:00.000Z",
+    "updatedAt": "2024-01-12T09:00:00.000Z"
+  }
+]

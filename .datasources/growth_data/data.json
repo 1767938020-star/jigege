@@ -1,0 +1,42 @@
+
+[
+  {
+    "_id": "growth_001",
+    "location": "齐伯场地",
+    "week": "第1周",
+    "weight": 0.5,
+    "growth_rate": 100,
+    "cycle": 1,
+    "notes": "初始体重",
+    "measure_time": "2024-01-08T08:00:00.000Z",
+    "chicken_id": "chicken_001",
+    "createdAt": "2024-01-08T08:00:00.000Z",
+    "updatedAt": "2024-01-08T08:00:00.000Z"
+  },
+  {
+    "_id": "growth_002",
+    "location": "大屯场地",
+    "week": "第2周",
+    "weight": 1.2,
+    "growth_rate": 140,
+    "cycle": 2,
+    "notes": "生长迅速",
+    "measure_time": "2024-01-15T08:00:00.000Z",
+    "chicken_id": "chicken_002",
+    "createdAt": "2024-01-15T08:00:00.000Z",
+    "updatedAt": "2024-01-15T08:00:00.000Z"
+  },
+  {
+    "_id": "growth_003",
+    "location": "十字场地",
+    "week": "第4周",
+    "weight": 2.5,
+    "growth_rate": 108,
+    "cycle": 4,
+    "notes": "稳定增长",
+    "measure_time": "2024-01-15T08:00:00.000Z",
+    "chicken_id": "chicken_003",
+    "createdAt": "2024-01-15T08:00:00.000Z",
+    "updatedAt": "2024-01-15T08:00:00.000Z"
+  }
+]

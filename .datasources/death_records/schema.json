@@ -1,0 +1,52 @@
+
+{
+  "name": "death_records",
+  "title": "死亡记录",
+  "schemas": [
+    {
+      "name": "death_count",
+      "title": "死亡数量",
+      "type": "Number"
+    },
+    {
+      "name": "death_date",
+      "title": "死亡日期",
+      "type": "Date",
+      "format": "string"
+    },
+    {
+      "name": "death_reason",
+      "title": "死亡原因",
+      "type": "String"
+    },
+    {
+      "name": "notes",
+      "title": "备注",
+      "type": "MultiLineString"
+    },
+    {
+      "name": "record_time",
+      "title": "记录时间",
+      "type": "DateTime",
+      "format": "string"
+    },
+    {
+      "name": "chicken_id",
+      "title": "鸡只编号",
+      "type": "String"
+    },
+    {
+      "name": "photos",
+      "title": "相关图片",
+      "type": "Array",
+      "items": {
+        "type": "Object"
+      }
+    },
+    {
+      "name": "location",
+      "title": "场地",
+      "type": "String"
+    }
+  ]
+}
