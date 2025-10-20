@@ -42,16 +42,16 @@ export default function LocationLogin(props) {
   // 场地管理员账号配置 - 更新用户名和密码
   const locationAccounts = {
     '齐伯场地': {
-      username: 'qibo_manager',
-      password: 'qibo2024'
+      username: 'mingyu01',
+      password: 'mingyu888'
     },
     '大屯场地': {
-      username: 'datun_manager',
-      password: 'datun2024'
+      username: 'mingyu02',
+      password: 'mingyu888'
     },
     '十字场地': {
-      username: 'shizi_manager',
-      password: 'shizi2024'
+      username: 'mingyu03',
+      password: 'shizi2025'
     }
   };
   const handleLogin = async () => {
