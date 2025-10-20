@@ -3,13 +3,14 @@ import React from 'react';
 // @ts-ignore;
 import { Card, CardContent, CardHeader, CardTitle, Button, Badge } from '@/components/ui';
 // @ts-ignore;
-import { Edit, Trash2, AlertTriangle, Loader2 } from 'lucide-react';
+import { Edit, Trash2, AlertTriangle, Loader2, History } from 'lucide-react';
 
 export function ChickenCard({
   chicken,
   onEdit,
   onDelete,
   onDeathRecord,
+  onViewDeathHistory,
   deleteLoading
 }) {
   const getStatusColor = status => {
@@ -42,6 +43,9 @@ export function ChickenCard({
             </Button>
             <Button variant="ghost" size="sm" onClick={onDeathRecord} className="text-orange-600 hover:text-orange-800">
               <AlertTriangle size={16} />
+            </Button>
+            <Button variant="ghost" size="sm" onClick={onViewDeathHistory} className="text-purple-600 hover:text-purple-800">
+              <History size={16} />
             </Button>
           </div>
         </div>

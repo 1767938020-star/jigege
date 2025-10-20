@@ -1,9 +1,9 @@
 // @ts-ignore;
 import React, { useState, useEffect } from 'react';
 // @ts-ignore;
-import { Card, CardContent, CardHeader, CardTitle, Button, Input, Textarea, useToast, Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, Alert, AlertDescription } from '@/components/ui';
+import { Card, CardContent, CardHeader, CardTitle, Button, Input, Textarea, useToast, Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, Alert, AlertDescription, Badge } from '@/components/ui';
 // @ts-ignore;
-import { Plus, Edit, Trash2, Camera, BarChart3, ArrowLeft, LogOut, Users, WifiOff, RefreshCw } from 'lucide-react';
+import { Plus, Edit, Trash2, Camera, BarChart3, ArrowLeft, LogOut, Users, WifiOff, RefreshCw, AlertTriangle, Calendar } from 'lucide-react';
 
 // @ts-ignore;
 import { ChickenCard } from '@/components/ChickenCard';
@@ -24,7 +24,9 @@ export default function Chickens(props) {
   const [showAddModal, setShowAddModal] = useState(false);
   const [showEditModal, setShowEditModal] = useState(false);
   const [showDeathModal, setShowDeathModal] = useState(false);
+  const [showDeathHistory, setShowDeathHistory] = useState(false);
   const [editingChicken, setEditingChicken] = useState(null);
+  const [deathRecords, setDeathRecords] = useState([]);
   const [newChicken, setNewChicken] = useState({
     breed: '',
     count: '',
@@ -37,6 +39,7 @@ export default function Chickens(props) {
   const [loading, setLoading] = useState(false);
   const [networkError, setNetworkError] = useState(false);
   const [deleteLoading, setDeleteLoading] = useState(null);
+  const [loadingDeathRecords, setLoadingDeathRecords] = useState(false);
 
   // 检查登录状态和获取场地信息
   useEffect(() => {
@@ -62,7 +65,6 @@ export default function Chickens(props) {
   // 检查网络连接状态
   const checkNetworkConnection = async () => {
     try {
-      // 简单的网络检查
       const response = await fetch('https://www.google.com/favicon.ico', {
         method: 'HEAD',
         mode: 'no-cors'
@@ -120,6 +122,47 @@ export default function Chickens(props) {
       setLoading(false);
     }
   };
+
+  // 加载死亡记录历史
+  const loadDeathRecords = async (chickenId, location) => {
+    setLoadingDeathRecords(true);
+    try {
+      const response = await $w.cloud.callDataSource({
+        dataSourceName: 'death_records',
+        methodName: 'wedaGetRecordsV2',
+        params: {
+          filter: {
+            where: {
+              chicken_id: {
+                $eq: chickenId
+              },
+              location: {
+                $eq: location
+              }
+            }
+          },
+          select: {
+            $master: true
+          },
+          orderBy: [{
+            death_date: 'desc'
+          }],
+          pageSize: 50,
+          pageNumber: 1
+        }
+      });
+      setDeathRecords(response.records || []);
+    } catch (error) {
+      console.error('加载死亡记录失败:', error);
+      toast({
+        title: '加载失败',
+        description: '无法加载死亡记录',
+        variant: 'destructive'
+      });
+    } finally {
+      setLoadingDeathRecords(false);
+    }
+  };
   const handleLogout = () => {
     localStorage.removeItem(`chickenFarm_${currentLocation}_LoggedIn`);
     localStorage.removeItem('currentLocation');
@@ -162,8 +205,6 @@ export default function Chickens(props) {
         age: parseInt(newChicken.age),
         mortality: parseFloat(newChicken.mortality) || 0
       };
-
-      // 保存到数据库
       const result = await $w.cloud.callDataSource({
         dataSourceName: 'chicken_info',
         methodName: 'wedaCreateV2',
@@ -313,6 +354,11 @@ export default function Chickens(props) {
       setDeleteLoading(null);
     }
   };
+  const handleViewDeathHistory = async chicken => {
+    setEditingChicken(chicken);
+    await loadDeathRecords(chicken._id, currentLocation);
+    setShowDeathHistory(true);
+  };
   const retryLoadData = () => {
     loadChickens(currentLocation);
   };
@@ -329,6 +375,9 @@ export default function Chickens(props) {
   const currentLocationChickens = chickens.filter(chicken => chicken.location === currentLocation);
   const totalChickens = currentLocationChickens.reduce((sum, chicken) => sum + (chicken.count || 0), 0);
   const avgMortality = currentLocationChickens.length > 0 ? currentLocationChickens.reduce((sum, chicken) => sum + (chicken.mortality || 0), 0) / currentLocationChickens.length : 0;
+
+  // 计算总死亡数量
+  const totalDeathCount = deathRecords.reduce((sum, record) => sum + (record.death_count || 0), 0);
   return <div className="min-h-screen bg-gray-50 pb-20">
       {/* 顶部导航栏 */}
       <div className="bg-green-600 text-white p-4">
@@ -373,7 +422,7 @@ export default function Chickens(props) {
             </CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="grid grid-cols-2 gap-4">
+            <div className="grid grid-cols-3 gap-4">
               <div className="bg-green-50 p-4 rounded-lg">
                 <p className="text-green-700 font-medium">总鸡只数量</p>
                 <p className="text-2xl font-bold text-green-600">{totalChickens}只</p>
@@ -381,6 +430,10 @@ export default function Chickens(props) {
               <div className="bg-blue-50 p-4 rounded-lg">
                 <p className="text-blue-700 font-medium">平均死亡率</p>
                 <p className="text-2xl font-bold text-blue-600">{avgMortality.toFixed(2)}%</p>
+              </div>
+              <div className="bg-red-50 p-4 rounded-lg">
+                <p className="text-red-700 font-medium">累计死亡数量</p>
+                <p className="text-2xl font-bold text-red-600">{totalDeathCount}只</p>
               </div>
             </div>
           </CardContent>
@@ -407,7 +460,7 @@ export default function Chickens(props) {
         }} onDelete={() => handleDeleteChicken(chicken._id)} onDeathRecord={() => {
           setEditingChicken(chicken);
           setShowDeathModal(true);
-        }} deleteLoading={deleteLoading === chicken._id} />)}
+        }} onViewDeathHistory={() => handleViewDeathHistory(chicken)} deleteLoading={deleteLoading === chicken._id} />)}
             {currentLocationChickens.length === 0 && <Card>
                 <CardContent className="p-6 text-center">
                   <Users className="mx-auto mb-4 text-gray-400" size={48} />
@@ -539,6 +592,60 @@ export default function Chickens(props) {
       loadChickens(currentLocation);
       setShowDeathModal(false);
     }} />
+
+      {/* 死亡记录历史模态框 */}
+      <Dialog open={showDeathHistory} onOpenChange={setShowDeathHistory}>
+        <DialogContent className="max-w-4xl max-h-[80vh]">
+          <DialogHeader>
+            <DialogTitle className="flex items-center">
+              <AlertTriangle className="mr-2 text-red-600" size={20} />
+              死亡记录历史 - {editingChicken?.breed || '鸡只'}
+            </DialogTitle>
+          </DialogHeader>
+          <div className="max-h-[60vh] overflow-y-auto">
+            {loadingDeathRecords ? <div className="flex justify-center items-center py-8">
+                <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-red-600"></div>
+                <span className="ml-2 text-gray-600">加载死亡记录中...</span>
+              </div> : <div className="space-y-4">
+                {deathRecords.length === 0 ? <div className="text-center py-8">
+                    <Calendar className="mx-auto mb-4 text-gray-400" size={48} />
+                    <p className="text-gray-500">暂无死亡记录</p>
+                  </div> : deathRecords.map(record => <Card key={record._id} className="border-red-100">
+                      <CardContent className="p-4">
+                        <div className="flex justify-between items-start mb-2">
+                          <div>
+                            <div className="flex items-center mb-1">
+                              <Badge variant="destructive" className="mr-2">
+                                {record.death_count}只
+                              </Badge>
+                              <span className="text-sm text-gray-600">
+                                {new Date(record.death_date).toLocaleDateString()}
+                              </span>
+                            </div>
+                            <p className="font-medium">{record.death_reason}</p>
+                          </div>
+                          <span className="text-xs text-gray-500">
+                            {new Date(record.record_time).toLocaleString()}
+                          </span>
+                        </div>
+                        {record.notes && <p className="text-sm text-gray-600 mt-2">{record.notes}</p>}
+                      </CardContent>
+                    </Card>)}
+              </div>}
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setShowDeathHistory(false)}>
+              关闭
+            </Button>
+            <Button onClick={() => {
+            setShowDeathHistory(false);
+            setShowDeathModal(true);
+          }} className="bg-red-600 hover:bg-red-700">
+              添加新记录
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
 
       {/* 底部导航栏 */}
       <TabBar currentPage="chickens" location={currentLocation} $w={$w} />
