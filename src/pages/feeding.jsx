@@ -1,7 +1,7 @@
 // @ts-ignore;
 import React, { useState, useEffect } from 'react';
 // @ts-ignore;
-import { Card, CardContent, CardHeader, CardTitle, Button, Input, Textarea, useToast, Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui';
+import { Card, CardContent, CardHeader, CardTitle, Button, Input, Textarea, useToast, Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from '@/components/ui';
 // @ts-ignore;
 import { Plus, Edit, Trash2, ArrowLeft, LogOut, Calendar } from 'lucide-react';
 
@@ -18,6 +18,8 @@ export default function Feeding(props) {
   const [currentLocation, setCurrentLocation] = useState('');
   const [isLoggedIn, setIsLoggedIn] = useState(false);
   const [showAddModal, setShowAddModal] = useState(false);
+  const [showDeleteDialog, setShowDeleteDialog] = useState(false);
+  const [feedingToDelete, setFeedingToDelete] = useState(null);
   const [newFeeding, setNewFeeding] = useState({
     feed_type: '',
     amount: '',
@@ -88,26 +90,13 @@ export default function Feeding(props) {
       setFeedings(mockData);
     }
   };
-  const handleLogout = () => {
-    localStorage.removeItem(`chickenFarm_${currentLocation}_LoggedIn`);
-    localStorage.removeItem('currentLocation');
-    toast({
-      title: '已退出登录',
-      description: `已退出${currentLocation}管理系统`
-    });
-    $w.utils.redirectTo({
-      pageId: 'home',
-      params: {}
-    });
-  };
-  const handleBack = () => {
-    $w.utils.navigateBack();
-  };
+
+  // 添加喂养记录
   const handleAddFeeding = async () => {
     if (!newFeeding.feed_type || !newFeeding.amount) {
       toast({
         title: '添加失败',
-        description: '请填写完整信息',
+        description: '请填写饲料类型和喂养量',
         variant: 'destructive'
       });
       return;
@@ -139,12 +128,68 @@ export default function Feeding(props) {
       });
       loadFeedings(currentLocation);
     } catch (error) {
+      console.error('添加喂养记录失败:', error);
       toast({
         title: '添加失败',
         description: '网络错误，请重试',
         variant: 'destructive'
       });
     }
+  };
+
+  // 删除喂养记录
+  const handleDeleteFeeding = async () => {
+    if (!feedingToDelete) return;
+    try {
+      await $w.cloud.callDataSource({
+        dataSourceName: 'feeding_records',
+        methodName: 'wedaDeleteV2',
+        params: {
+          filter: {
+            where: {
+              _id: {
+                $eq: feedingToDelete._id
+              }
+            }
+          }
+        }
+      });
+      toast({
+        title: '删除成功',
+        description: `已删除喂养记录：${feedingToDelete.feed_type}`
+      });
+      setShowDeleteDialog(false);
+      setFeedingToDelete(null);
+      loadFeedings(currentLocation);
+    } catch (error) {
+      console.error('删除喂养记录失败:', error);
+      toast({
+        title: '删除失败',
+        description: '网络错误，请重试',
+        variant: 'destructive'
+      });
+    }
+  };
+
+  // 打开删除确认对话框
+  const openDeleteDialog = feeding => {
+    setFeedingToDelete(feeding);
+    setShowDeleteDialog(true);
+  };
+  const handleLogout = () => {
+    localStorage.removeItem(`chickenFarm_${currentLocation}_LoggedIn`);
+    localStorage.removeItem('currentLocation');
+    toast({
+      title: '已退出登录',
+      description: `已退出${currentLocation}管理系统`
+    });
+    $w.utils.redirectTo({
+      pageId: 'home',
+      params: {}
+    });
+  };
+  const handleBack = () => {
+    $w.utils.navigateBack();
   };
   if (!isLoggedIn) {
     return <div className="min-h-screen bg-gray-50 flex items-center justify-center">
@@ -219,21 +264,38 @@ export default function Feeding(props) {
           {feedings.map(feeding => <Card key={feeding._id}>
               <CardContent className="p-4">
                 <div className="flex justify-between items-start">
-                  <div>
-                    <h3 className="font-semibold">{feeding.feed_type}</h3>
-                    <p className="text-sm text-gray-600">用量: {feeding.amount}</p>
-                    <p className="text-sm text-gray-600">
-                      时间: {new Date(feeding.time).toLocaleString()}
-                    </p>
-                    {feeding.notes && <p className="text-sm text-gray-600 mt-1">备注: {feeding.notes}</p>}
+                  <div className="flex-1">
+                    <div className="flex items-center justify-between mb-2">
+                      <h3 className="font-semibold text-lg">{feeding.feed_type}</h3>
+                      <Button variant="destructive" size="sm" onClick={() => openDeleteDialog(feeding)} className="bg-red-600 hover:bg-red-700">
+                        <Trash2 size={14} />
+                      </Button>
+                    </div>
+                    <div className="grid grid-cols-2 gap-2 text-sm">
+                      <div>
+                        <span className="text-gray-600">喂养量:</span>
+                        <span className="ml-2 font-medium">{feeding.amount}</span>
+                      </div>
+                      <div>
+                        <span className="text-gray-600">鸡只编号:</span>
+                        <span className="ml-2 font-medium">{feeding.chicken_id || '未指定'}</span>
+                      </div>
+                    </div>
+                    <div className="mt-2">
+                      <p className="text-sm text-gray-600">
+                        时间: {new Date(feeding.time).toLocaleString()}
+                      </p>
+                      {feeding.notes && <p className="text-sm text-gray-600 mt-1">备注: {feeding.notes}</p>}
+                    </div>
                   </div>
                 </div>
               </CardContent>
             </Card>)}
+          
           {feedings.length === 0 && <Card>
               <CardContent className="p-6 text-center">
-                <p className="text-gray-500">暂无喂养记录</p>
-                <Button onClick={() => setShowAddModal(true)} className="mt-2 bg-green-600 hover:bg-green-700">
+                <p className="text-gray-500 text-lg mb-4">暂无喂养记录</p>
+                <Button onClick={() => setShowAddModal(true)} className="bg-green-600 hover:bg-green-700">
                   <Plus className="mr-2" size={16} />
                   添加第一条记录
                 </Button>
@@ -264,6 +326,13 @@ export default function Feeding(props) {
             })} placeholder="请输入喂养量" />
             </div>
             <div>
+              <label className="text-sm font-medium">鸡只编号</label>
+              <Input value={newFeeding.chicken_id} onChange={e => setNewFeeding({
+              ...newFeeding,
+              chicken_id: e.target.value
+            })} placeholder="请输入鸡只编号（可选）" />
+            </div>
+            <div>
               <label className="text-sm font-medium">喂养时间</label>
               <Input type="datetime-local" value={newFeeding.time} onChange={e => setNewFeeding({
               ...newFeeding,
@@ -284,6 +353,24 @@ export default function Feeding(props) {
           </DialogFooter>
         </DialogContent>
       </Dialog>
+
+      {/* 删除确认对话框 */}
+      <AlertDialog open={showDeleteDialog} onOpenChange={setShowDeleteDialog}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>确认删除</AlertDialogTitle>
+            <AlertDialogDescription>
+              确定要删除 "{feedingToDelete?.feed_type}" 的喂养记录吗？此操作无法撤销。
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>取消</AlertDialogCancel>
+            <AlertDialogAction onClick={handleDeleteFeeding} className="bg-red-600 hover:bg-red-700">
+              确认删除
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
 
       {/* 底部导航栏 */}
       <TabBar currentPage="feeding" location={currentLocation} $w={$w} />

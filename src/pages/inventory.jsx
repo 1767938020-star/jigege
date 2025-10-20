@@ -1,7 +1,7 @@
 // @ts-ignore;
 import React, { useState, useEffect } from 'react';
 // @ts-ignore;
-import { Card, CardContent, CardHeader, CardTitle, Button, Input, Textarea, useToast, Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui';
+import { Card, CardContent, CardHeader, CardTitle, Button, Input, useToast, Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from '@/components/ui';
 // @ts-ignore;
 import { Plus, Edit, Trash2, ArrowLeft, LogOut, AlertTriangle } from 'lucide-react';
 
@@ -18,6 +18,8 @@ export default function Inventory(props) {
   const [currentLocation, setCurrentLocation] = useState('');
   const [isLoggedIn, setIsLoggedIn] = useState(false);
   const [showAddModal, setShowAddModal] = useState(false);
+  const [showDeleteDialog, setShowDeleteDialog] = useState(false);
+  const [itemToDelete, setItemToDelete] = useState(null);
   const [newItem, setNewItem] = useState({
     name: '',
     type: '',
@@ -87,21 +89,8 @@ export default function Inventory(props) {
       setInventory(mockData);
     }
   };
-  const handleLogout = () => {
-    localStorage.removeItem(`chickenFarm_${currentLocation}_LoggedIn`);
-    localStorage.removeItem('currentLocation');
-    toast({
-      title: '已退出登录',
-      description: `已退出${currentLocation}管理系统`
-    });
-    $w.utils.redirectTo({
-      pageId: 'home',
-      params: {}
-    });
-  };
-  const handleBack = () => {
-    $w.utils.navigateBack();
-  };
+
+  // 添加库存物品
   const handleAddItem = async () => {
     if (!newItem.name || !newItem.type || !newItem.quantity) {
       toast({
@@ -142,12 +131,68 @@ export default function Inventory(props) {
       });
       loadInventory(currentLocation);
     } catch (error) {
+      console.error('添加库存物品失败:', error);
       toast({
         title: '添加失败',
         description: '网络错误，请重试',
         variant: 'destructive'
       });
     }
+  };
+
+  // 删除库存物品
+  const handleDeleteItem = async () => {
+    if (!itemToDelete) return;
+    try {
+      await $w.cloud.callDataSource({
+        dataSourceName: 'inventory_management',
+        methodName: 'wedaDeleteV2',
+        params: {
+          filter: {
+            where: {
+              _id: {
+                $eq: itemToDelete._id
+              }
+            }
+          }
+        }
+      });
+      toast({
+        title: '删除成功',
+        description: `已删除物品：${itemToDelete.name}`
+      });
+      setShowDeleteDialog(false);
+      setItemToDelete(null);
+      loadInventory(currentLocation);
+    } catch (error) {
+      console.error('删除库存物品失败:', error);
+      toast({
+        title: '删除失败',
+        description: '网络错误，请重试',
+        variant: 'destructive'
+      });
+    }
+  };
+
+  // 打开删除确认对话框
+  const openDeleteDialog = item => {
+    setItemToDelete(item);
+    setShowDeleteDialog(true);
+  };
+  const handleLogout = () => {
+    localStorage.removeItem(`chickenFarm_${currentLocation}_LoggedIn`);
+    localStorage.removeItem('currentLocation');
+    toast({
+      title: '已退出登录',
+      description: `已退出${currentLocation}管理系统`
+    });
+    $w.utils.redirectTo({
+      pageId: 'home',
+      params: {}
+    });
+  };
+  const handleBack = () => {
+    $w.utils.navigateBack();
   };
   if (!isLoggedIn) {
     return <div className="min-h-screen bg-gray-50 flex items-center justify-center">
@@ -216,29 +261,52 @@ export default function Inventory(props) {
           {inventory.map(item => <Card key={item._id} className={item.status === 'warning' ? 'border-red-200' : ''}>
               <CardContent className="p-4">
                 <div className="flex justify-between items-start">
-                  <div>
-                    <div className="flex items-center">
-                      <h3 className="font-semibold">{item.name}</h3>
-                      {item.status === 'warning' && <AlertTriangle className="ml-2 text-red-500" size={16} />}
+                  <div className="flex-1">
+                    <div className="flex items-center justify-between mb-2">
+                      <div className="flex items-center">
+                        <h3 className="font-semibold text-lg">{item.name}</h3>
+                        {item.status === 'warning' && <AlertTriangle className="ml-2 text-red-500" size={16} />}
+                      </div>
+                      <Button variant="destructive" size="sm" onClick={() => openDeleteDialog(item)} className="bg-red-600 hover:bg-red-700">
+                        <Trash2 size={14} />
+                      </Button>
                     </div>
-                    <p className="text-sm text-gray-600">类型: {item.type}</p>
-                    <p className="text-sm text-gray-600">
-                      库存: {item.quantity}{item.unit}
-                      {item.threshold > 0 && <span className={`ml-2 ${item.quantity <= item.threshold ? 'text-red-500' : 'text-gray-500'}`}>
-                          (预警: {item.threshold}{item.unit})
-                        </span>}
-                    </p>
-                    <p className={`text-sm ${item.status === 'warning' ? 'text-red-500' : 'text-gray-600'}`}>
-                      状态: {item.status === 'warning' ? '库存不足' : '正常'}
-                    </p>
+                    <div className="grid grid-cols-2 gap-2 text-sm">
+                      <div>
+                        <span className="text-gray-600">类型:</span>
+                        <span className="ml-2 font-medium">{item.type}</span>
+                      </div>
+                      <div>
+                        <span className="text-gray-600">单位:</span>
+                        <span className="ml-2 font-medium">{item.unit}</span>
+                      </div>
+                      <div>
+                        <span className="text-gray-600">库存:</span>
+                        <span className={`ml-2 font-medium ${item.status === 'warning' ? 'text-red-600' : 'text-green-600'}`}>
+                          {item.quantity}{item.unit}
+                        </span>
+                      </div>
+                      <div>
+                        <span className="text-gray-600">预警:</span>
+                        <span className="ml-2 font-medium text-gray-600">
+                          {item.threshold > 0 ? `${item.threshold}${item.unit}` : '未设置'}
+                        </span>
+                      </div>
+                    </div>
+                    <div className="mt-2">
+                      <span className={`inline-block px-2 py-1 rounded-full text-xs font-medium ${item.status === 'warning' ? 'bg-red-100 text-red-800' : 'bg-green-100 text-green-800'}`}>
+                        {item.status === 'warning' ? '库存不足' : '库存正常'}
+                      </span>
+                    </div>
                   </div>
                 </div>
               </CardContent>
             </Card>)}
+          
           {inventory.length === 0 && <Card>
               <CardContent className="p-6 text-center">
-                <p className="text-gray-500">暂无库存物品</p>
-                <Button onClick={() => setShowAddModal(true)} className="mt-2 bg-green-600 hover:bg-green-700">
+                <p className="text-gray-500 text-lg mb-4">暂无库存物品</p>
+                <Button onClick={() => setShowAddModal(true)} className="bg-green-600 hover:bg-green-700">
                   <Plus className="mr-2" size={16} />
                   添加第一个物品
                 </Button>
@@ -300,6 +368,24 @@ export default function Inventory(props) {
           </DialogFooter>
         </DialogContent>
       </Dialog>
+
+      {/* 删除确认对话框 */}
+      <AlertDialog open={showDeleteDialog} onOpenChange={setShowDeleteDialog}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>确认删除</AlertDialogTitle>
+            <AlertDialogDescription>
+              确定要删除物品 "{itemToDelete?.name}" 吗？此操作无法撤销。
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>取消</AlertDialogCancel>
+            <AlertDialogAction onClick={handleDeleteItem} className="bg-red-600 hover:bg-red-700">
+              确认删除
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
 
       {/* 底部导航栏 */}
       <TabBar currentPage="inventory" location={currentLocation} $w={$w} />
