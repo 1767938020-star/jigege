@@ -1,7 +1,7 @@
 // @ts-ignore;
 import React, { useState, useEffect } from 'react';
 // @ts-ignore;
-import { Card, CardContent, CardHeader, CardTitle, Button, Input, Textarea, useToast, Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from '@/components/ui';
+import { Card, CardContent, CardHeader, CardTitle, Button, Input, Textarea, useToast, Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, Alert, AlertDescription } from '@/components/ui';
 // @ts-ignore;
 import { Plus, Edit, Trash2, Camera, BarChart3, ArrowLeft, LogOut, Users, WifiOff, RefreshCw } from 'lucide-react';
 
@@ -24,8 +24,6 @@ export default function Chickens(props) {
   const [showAddModal, setShowAddModal] = useState(false);
   const [showEditModal, setShowEditModal] = useState(false);
   const [showDeathModal, setShowDeathModal] = useState(false);
-  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
-  const [deletingChickenId, setDeletingChickenId] = useState(null);
   const [editingChicken, setEditingChicken] = useState(null);
   const [newChicken, setNewChicken] = useState({
     breed: '',
@@ -37,8 +35,8 @@ export default function Chickens(props) {
     status: 'active'
   });
   const [loading, setLoading] = useState(false);
-  const [deleteLoading, setDeleteLoading] = useState(false);
   const [networkError, setNetworkError] = useState(false);
+  const [deleteLoading, setDeleteLoading] = useState(null);
 
   // 检查登录状态和获取场地信息
   useEffect(() => {
@@ -61,11 +59,35 @@ export default function Chickens(props) {
     loadChickens(location);
   }, [$w, toast]);
 
+  // 检查网络连接状态
+  const checkNetworkConnection = async () => {
+    try {
+      // 简单的网络检查
+      const response = await fetch('https://www.google.com/favicon.ico', {
+        method: 'HEAD',
+        mode: 'no-cors'
+      });
+      return true;
+    } catch (error) {
+      return false;
+    }
+  };
+
   // 加载当前场地的鸡只数据
   const loadChickens = async location => {
     setLoading(true);
     setNetworkError(false);
     try {
+      const isOnline = await checkNetworkConnection();
+      if (!isOnline) {
+        setNetworkError(true);
+        toast({
+          title: '网络连接失败',
+          description: '请检查网络连接后重试',
+          variant: 'destructive'
+        });
+        return;
+      }
       const response = await $w.cloud.callDataSource({
         dataSourceName: 'chicken_info',
         methodName: 'wedaGetRecordsV2',
@@ -85,12 +107,13 @@ export default function Chickens(props) {
         }
       });
       setChickens(response.records || []);
+      setNetworkError(false);
     } catch (error) {
       console.error('加载鸡只数据失败:', error);
       setNetworkError(true);
       toast({
         title: '加载失败',
-        description: '无法加载鸡只数据，请检查网络连接',
+        description: '网络连接异常，请检查网络后重试',
         variant: 'destructive'
       });
     } finally {
@@ -123,6 +146,15 @@ export default function Chickens(props) {
     }
     setLoading(true);
     try {
+      const isOnline = await checkNetworkConnection();
+      if (!isOnline) {
+        toast({
+          title: '网络连接失败',
+          description: '请检查网络连接后重试',
+          variant: 'destructive'
+        });
+        return;
+      }
       const chickenData = {
         ...newChicken,
         location: currentLocation,
@@ -156,9 +188,13 @@ export default function Chickens(props) {
       loadChickens(currentLocation);
     } catch (error) {
       console.error('添加鸡只失败:', error);
+      let errorMessage = '网络错误，请重试';
+      if (error.code) {
+        errorMessage = `错误代码: ${error.code}, 请检查网络连接`;
+      }
       toast({
         title: '添加失败',
-        description: '网络错误，请重试',
+        description: errorMessage,
         variant: 'destructive'
       });
     } finally {
@@ -169,6 +205,15 @@ export default function Chickens(props) {
     if (!editingChicken) return;
     setLoading(true);
     try {
+      const isOnline = await checkNetworkConnection();
+      if (!isOnline) {
+        toast({
+          title: '网络连接失败',
+          description: '请检查网络连接后重试',
+          variant: 'destructive'
+        });
+        return;
+      }
       const updateData = {
         ...editingChicken,
         count: parseInt(editingChicken.count),
@@ -198,57 +243,66 @@ export default function Chickens(props) {
       loadChickens(currentLocation);
     } catch (error) {
       console.error('更新鸡只失败:', error);
+      let errorMessage = '网络错误，请重试';
+      if (error.code) {
+        errorMessage = `错误代码: ${error.code}, 请检查网络连接`;
+      }
       toast({
         title: '更新失败',
-        description: '网络错误，请重试',
+        description: errorMessage,
         variant: 'destructive'
       });
     } finally {
       setLoading(false);
     }
   };
-
-  // 优化删除操作，添加重试机制
   const handleDeleteChicken = async chickenId => {
-    setDeletingChickenId(chickenId);
-    setShowDeleteConfirm(true);
-  };
-  const confirmDelete = async () => {
-    if (!deletingChickenId) return;
-    setDeleteLoading(true);
+    if (!confirm('确定要删除这条鸡只信息吗？删除后无法恢复')) return;
+    setDeleteLoading(chickenId);
     try {
-      // 添加超时机制
-      const deletePromise = $w.cloud.callDataSource({
+      const isOnline = await checkNetworkConnection();
+      if (!isOnline) {
+        toast({
+          title: '网络连接失败',
+          description: '请检查网络连接后重试',
+          variant: 'destructive'
+        });
+        setDeleteLoading(null);
+        return;
+      }
+      const result = await $w.cloud.callDataSource({
         dataSourceName: 'chicken_info',
         methodName: 'wedaDeleteV2',
         params: {
           filter: {
             where: {
               _id: {
-                $eq: deletingChickenId
+                $eq: chickenId
               }
             }
           }
         }
       });
-
-      // 设置超时时间（手机网络可能较慢）
-      const timeoutPromise = new Promise((_, reject) => setTimeout(() => reject(new Error('操作超时，请检查网络连接')), 10000));
-      const result = await Promise.race([deletePromise, timeoutPromise]);
-      toast({
-        title: '删除成功',
-        description: '鸡只信息已删除'
-      });
-      loadChickens(currentLocation);
+      if (result.count === 1) {
+        toast({
+          title: '删除成功',
+          description: '鸡只信息已删除'
+        });
+        loadChickens(currentLocation);
+      } else {
+        toast({
+          title: '删除失败',
+          description: '未找到要删除的记录',
+          variant: 'destructive'
+        });
+      }
     } catch (error) {
       console.error('删除鸡只失败:', error);
       let errorMessage = '网络错误，请重试';
-      if (error.message.includes('超时')) {
-        errorMessage = '操作超时，请检查网络连接';
-      } else if (error.code === 'NETWORK_ERROR') {
-        errorMessage = '网络连接失败，请检查网络设置';
-      } else if (error.code === 'UNAUTHORIZED') {
-        errorMessage = '权限不足，无法删除';
+      if (error.code) {
+        errorMessage = `错误代码: ${error.code}, 请检查网络连接和权限设置`;
+      } else if (error.message) {
+        errorMessage = error.message;
       }
       toast({
         title: '删除失败',
@@ -256,9 +310,7 @@ export default function Chickens(props) {
         variant: 'destructive'
       });
     } finally {
-      setDeleteLoading(false);
-      setShowDeleteConfirm(false);
-      setDeletingChickenId(null);
+      setDeleteLoading(null);
     }
   };
   const retryLoadData = () => {
@@ -299,23 +351,16 @@ export default function Chickens(props) {
 
       {/* 网络错误提示 */}
       {networkError && <div className="p-4">
-          <Card className="bg-red-50 border-red-200">
-            <CardContent className="p-4">
-              <div className="flex items-center justify-between">
-                <div className="flex items-center">
-                  <WifiOff className="text-red-600 mr-2" size={20} />
-                  <div>
-                    <p className="text-red-800 font-medium">网络连接失败</p>
-                    <p className="text-red-600 text-sm">请检查网络连接后重试</p>
-                  </div>
-                </div>
-                <Button onClick={retryLoadData} variant="outline" size="sm" className="border-red-300 text-red-700 hover:bg-red-100">
-                  <RefreshCw className="mr-1" size={14} />
-                  重试
-                </Button>
-              </div>
-            </CardContent>
-          </Card>
+          <Alert variant="destructive">
+            <WifiOff className="h-4 w-4" />
+            <AlertDescription>
+              网络连接异常，请检查网络连接
+              <Button variant="outline" size="sm" onClick={retryLoadData} className="ml-2">
+                <RefreshCw className="h-3 w-3 mr-1" />
+                重试
+              </Button>
+            </AlertDescription>
+          </Alert>
         </div>}
 
       {/* 场地数据汇总 */}
@@ -362,7 +407,7 @@ export default function Chickens(props) {
         }} onDelete={() => handleDeleteChicken(chicken._id)} onDeathRecord={() => {
           setEditingChicken(chicken);
           setShowDeathModal(true);
-        }} />)}
+        }} deleteLoading={deleteLoading === chicken._id} />)}
             {currentLocationChickens.length === 0 && <Card>
                 <CardContent className="p-6 text-center">
                   <Users className="mx-auto mb-4 text-gray-400" size={48} />
@@ -494,27 +539,6 @@ export default function Chickens(props) {
       loadChickens(currentLocation);
       setShowDeathModal(false);
     }} />
-
-      {/* 删除确认对话框 */}
-      <AlertDialog open={showDeleteConfirm} onOpenChange={setShowDeleteConfirm}>
-        <AlertDialogContent>
-          <AlertDialogHeader>
-            <AlertDialogTitle>确认删除</AlertDialogTitle>
-            <AlertDialogDescription>
-              确定要删除这条鸡只信息吗？此操作无法撤销。
-            </AlertDialogDescription>
-          </AlertDialogHeader>
-          <AlertDialogFooter>
-            <AlertDialogCancel disabled={deleteLoading}>取消</AlertDialogCancel>
-            <AlertDialogAction onClick={confirmDelete} className="bg-red-600 hover:bg-red-700" disabled={deleteLoading}>
-              {deleteLoading ? <>
-                  <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
-                  删除中...
-                </> : '确认删除'}
-            </AlertDialogAction>
-          </AlertDialogFooter>
-        </AlertDialogContent>
-      </AlertDialog>
 
       {/* 底部导航栏 */}
       <TabBar currentPage="chickens" location={currentLocation} $w={$w} />
