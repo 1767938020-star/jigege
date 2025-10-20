@@ -4,7 +4,6 @@ import FEEDING from '../pages/feeding.jsx';
 import GROWTH from '../pages/growth.jsx';
 import INVENTORY from '../pages/inventory.jsx';
 import LOCATION_LOGIN from '../pages/location-login.jsx';
-import STATISTICS from '../pages/statistics.jsx';
 export const routers = [{
   id: "home",
   component: HOME
@@ -23,7 +22,4 @@ export const routers = [{
 }, {
   id: "location-login",
   component: LOCATION_LOGIN
-}, {
-  id: "statistics",
-  component: STATISTICS
 }]

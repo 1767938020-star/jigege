@@ -3,7 +3,7 @@ import React, { useState, useEffect } from 'react';
 // @ts-ignore;
 import { Card, CardContent, CardHeader, CardTitle, Button, Input, Textarea, useToast, Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from '@/components/ui';
 // @ts-ignore;
-import { Plus, Edit, Trash2, ArrowLeft, LogOut, Calendar } from 'lucide-react';
+import { Plus, Trash2, ArrowLeft, LogOut, Calendar } from 'lucide-react';
 
 // @ts-ignore;
 import TabBar from '@/components/TabBar';
@@ -77,17 +77,11 @@ export default function Feeding(props) {
       setFeedings(response.records || []);
     } catch (error) {
       console.error('加载喂养记录失败:', error);
-      // 使用模拟数据
-      const mockData = [{
-        _id: '1',
-        feed_type: '玉米饲料',
-        amount: '50kg',
-        time: new Date().toISOString(),
-        notes: '正常喂养',
-        location: location,
-        chicken_id: '1'
-      }].filter(item => item.location === location);
-      setFeedings(mockData);
+      toast({
+        title: '加载失败',
+        description: '网络错误，请重试',
+        variant: 'destructive'
+      });
     }
   };
 

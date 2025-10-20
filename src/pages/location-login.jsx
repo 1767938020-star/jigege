@@ -3,7 +3,7 @@ import React, { useState, useEffect } from 'react';
 // @ts-ignore;
 import { Card, CardContent, CardHeader, CardTitle, Button, Input, useToast } from '@/components/ui';
 // @ts-ignore;
-import { LogIn, Shield, ArrowLeft, MapPin, AlertCircle } from 'lucide-react';
+import { LogIn, ArrowLeft, MapPin, AlertCircle } from 'lucide-react';
 
 export default function LocationLogin(props) {
   const {
@@ -21,7 +21,6 @@ export default function LocationLogin(props) {
   // 获取场地参数
   useEffect(() => {
     const location = $w.page.dataset.params?.location || '';
-    console.log('获取到的场地参数:', location); // 调试日志
     if (!location) {
       toast({
         title: '参数错误',
@@ -39,7 +38,7 @@ export default function LocationLogin(props) {
     setCurrentLocation(location);
   }, [$w, toast]);
 
-  // 场地管理员账号配置 - 更新用户名和密码
+  // 场地管理员账号配置
   const locationAccounts = {
     '齐伯场地': {
       username: 'mingyu01',
@@ -55,12 +54,6 @@ export default function LocationLogin(props) {
     }
   };
   const handleLogin = async () => {
-    console.log('登录尝试:', {
-      currentLocation,
-      username,
-      password
-    }); // 调试日志
-
     if (!currentLocation) {
       setErrorMessage('场地信息获取失败，请重新选择场地');
       return;
@@ -72,26 +65,18 @@ export default function LocationLogin(props) {
     setLoading(true);
     setErrorMessage('');
     try {
-      // 模拟登录验证过程
       await new Promise(resolve => setTimeout(resolve, 500));
       const account = locationAccounts[currentLocation];
-      console.log('账号配置:', account); // 调试日志
-
       if (!account) {
         setErrorMessage(`未找到场地 ${currentLocation} 的账号配置`);
         return;
       }
 
-      // 严格比较用户名和密码
-      const isUsernameMatch = username.trim() === account.username;
-      const isPasswordMatch = password.trim() === account.password;
-      console.log('匹配结果:', {
-        isUsernameMatch,
-        isPasswordMatch
-      }); // 调试日志
-
-      if (isUsernameMatch && isPasswordMatch) {
-        // 保存场地登录状态到本地存储
+      // 精确比较用户名和密码
+      const inputUsername = username.trim();
+      const inputPassword = password.trim();
+      if (inputUsername === account.username && inputPassword === account.password) {
+        // 保存登录状态
         localStorage.setItem(`chickenFarm_${currentLocation}_LoggedIn`, 'true');
         localStorage.setItem('currentLocation', currentLocation);
         toast({
@@ -99,7 +84,7 @@ export default function LocationLogin(props) {
           description: `欢迎进入${currentLocation}管理系统`
         });
 
-        // 跳转到对应场地的鸡群管理页面
+        // 跳转到鸡群管理页面
         setTimeout(() => {
           $w.utils.redirectTo({
             pageId: 'chickens',
@@ -109,17 +94,9 @@ export default function LocationLogin(props) {
           });
         }, 500);
       } else {
-        // 提供更详细的错误信息
-        if (!isUsernameMatch && !isPasswordMatch) {
-          setErrorMessage('用户名和密码都不正确');
-        } else if (!isUsernameMatch) {
-          setErrorMessage('用户名不正确');
-        } else {
-          setErrorMessage('密码不正确');
-        }
+        setErrorMessage('用户名或密码错误，请检查后重试');
       }
     } catch (error) {
-      console.error('登录错误:', error);
       setErrorMessage('登录过程中出现错误，请重试');
     } finally {
       setLoading(false);
@@ -158,20 +135,17 @@ export default function LocationLogin(props) {
     green: {
       bg: 'from-green-50 to-emerald-100',
       primary: 'bg-green-600 hover:bg-green-700',
-      card: 'bg-green-100 text-green-600',
-      error: 'text-red-600'
+      card: 'bg-green-100 text-green-600'
     },
     blue: {
       bg: 'from-blue-50 to-cyan-100',
       primary: 'bg-blue-600 hover:bg-blue-700',
-      card: 'bg-blue-100 text-blue-600',
-      error: 'text-red-600'
+      card: 'bg-blue-100 text-blue-600'
     },
     purple: {
       bg: 'from-purple-50 to-violet-100',
       primary: 'bg-purple-600 hover:bg-purple-700',
-      card: 'bg-purple-100 text-purple-600',
-      error: 'text-red-600'
+      card: 'bg-purple-100 text-purple-600'
     }
   };
   if (!currentLocation) {
@@ -199,6 +173,7 @@ export default function LocationLogin(props) {
             <div className="w-10"></div>
           </div>
         </CardHeader>
+        
         <CardContent className="space-y-4">
           {errorMessage && <div className="flex items-center p-3 bg-red-50 border border-red-200 rounded-lg">
               <AlertCircle className="text-red-500 mr-2" size={16} />
@@ -212,6 +187,7 @@ export default function LocationLogin(props) {
             clearError();
           }} onKeyPress={handleKeyPress} className="w-full" />
           </div>
+          
           <div className="space-y-2">
             <label className="text-sm font-medium text-gray-700">密码</label>
             <Input type="password" placeholder="请输入密码" value={password} onChange={e => {
@@ -219,6 +195,7 @@ export default function LocationLogin(props) {
             clearError();
           }} onKeyPress={handleKeyPress} className="w-full" />
           </div>
+          
           <Button onClick={handleLogin} disabled={loading} className={`w-full ${themeClasses[theme].primary} text-white`}>
             <LogIn className="mr-2" size={16} />
             {loading ? '登录中...' : `登录${currentLocation}`}
@@ -228,7 +205,6 @@ export default function LocationLogin(props) {
             <p className="font-medium mb-2">{currentLocation}测试账号：</p>
             <p>用户名：<span className="font-mono bg-gray-100 px-2 py-1 rounded">{locationAccounts[currentLocation]?.username}</span></p>
             <p>密码：<span className="font-mono bg-gray-100 px-2 py-1 rounded">{locationAccounts[currentLocation]?.password}</span></p>
-            <p className="text-xs mt-2 text-gray-400">请确保用户名和密码完全匹配，包括大小写</p>
           </div>
         </CardContent>
       </Card>
