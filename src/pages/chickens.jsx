@@ -1,9 +1,9 @@
 // @ts-ignore;
 import React, { useState, useEffect } from 'react';
 // @ts-ignore;
-import { Card, CardContent, CardHeader, CardTitle, Button, Input, Textarea, useToast, Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui';
+import { Card, CardContent, CardHeader, CardTitle, Button, Input, Textarea, useToast, Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from '@/components/ui';
 // @ts-ignore;
-import { Plus, Edit, Trash2, Camera, BarChart3, ArrowLeft, LogOut, Users } from 'lucide-react';
+import { Plus, Edit, Trash2, Camera, BarChart3, ArrowLeft, LogOut, Users, WifiOff, RefreshCw } from 'lucide-react';
 
 // @ts-ignore;
 import { ChickenCard } from '@/components/ChickenCard';
@@ -24,6 +24,8 @@ export default function Chickens(props) {
   const [showAddModal, setShowAddModal] = useState(false);
   const [showEditModal, setShowEditModal] = useState(false);
   const [showDeathModal, setShowDeathModal] = useState(false);
+  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
+  const [deletingChickenId, setDeletingChickenId] = useState(null);
   const [editingChicken, setEditingChicken] = useState(null);
   const [newChicken, setNewChicken] = useState({
     breed: '',
@@ -35,6 +37,8 @@ export default function Chickens(props) {
     status: 'active'
   });
   const [loading, setLoading] = useState(false);
+  const [deleteLoading, setDeleteLoading] = useState(false);
+  const [networkError, setNetworkError] = useState(false);
 
   // 检查登录状态和获取场地信息
   useEffect(() => {
@@ -60,6 +64,7 @@ export default function Chickens(props) {
   // 加载当前场地的鸡只数据
   const loadChickens = async location => {
     setLoading(true);
+    setNetworkError(false);
     try {
       const response = await $w.cloud.callDataSource({
         dataSourceName: 'chicken_info',
@@ -82,6 +87,7 @@ export default function Chickens(props) {
       setChickens(response.records || []);
     } catch (error) {
       console.error('加载鸡只数据失败:', error);
+      setNetworkError(true);
       toast({
         title: '加载失败',
         description: '无法加载鸡只数据，请检查网络连接',
@@ -201,23 +207,34 @@ export default function Chickens(props) {
       setLoading(false);
     }
   };
+
+  // 优化删除操作，添加重试机制
   const handleDeleteChicken = async chickenId => {
-    if (!confirm('确定要删除这条鸡只信息吗？')) return;
-    setLoading(true);
+    setDeletingChickenId(chickenId);
+    setShowDeleteConfirm(true);
+  };
+  const confirmDelete = async () => {
+    if (!deletingChickenId) return;
+    setDeleteLoading(true);
     try {
-      const result = await $w.cloud.callDataSource({
+      // 添加超时机制
+      const deletePromise = $w.cloud.callDataSource({
         dataSourceName: 'chicken_info',
         methodName: 'wedaDeleteV2',
         params: {
           filter: {
             where: {
               _id: {
-                $eq: chickenId
+                $eq: deletingChickenId
               }
             }
           }
         }
       });
+
+      // 设置超时时间（手机网络可能较慢）
+      const timeoutPromise = new Promise((_, reject) => setTimeout(() => reject(new Error('操作超时，请检查网络连接')), 10000));
+      const result = await Promise.race([deletePromise, timeoutPromise]);
       toast({
         title: '删除成功',
         description: '鸡只信息已删除'
@@ -225,14 +242,27 @@ export default function Chickens(props) {
       loadChickens(currentLocation);
     } catch (error) {
       console.error('删除鸡只失败:', error);
+      let errorMessage = '网络错误，请重试';
+      if (error.message.includes('超时')) {
+        errorMessage = '操作超时，请检查网络连接';
+      } else if (error.code === 'NETWORK_ERROR') {
+        errorMessage = '网络连接失败，请检查网络设置';
+      } else if (error.code === 'UNAUTHORIZED') {
+        errorMessage = '权限不足，无法删除';
+      }
       toast({
         title: '删除失败',
-        description: '网络错误，请重试',
+        description: errorMessage,
         variant: 'destructive'
       });
     } finally {
-      setLoading(false);
+      setDeleteLoading(false);
+      setShowDeleteConfirm(false);
+      setDeletingChickenId(null);
     }
+  };
+  const retryLoadData = () => {
+    loadChickens(currentLocation);
   };
   if (!isLoggedIn) {
     return <div className="min-h-screen bg-gray-50 flex items-center justify-center">
@@ -266,6 +296,27 @@ export default function Chickens(props) {
           </Button>
         </div>
       </div>
+
+      {/* 网络错误提示 */}
+      {networkError && <div className="p-4">
+          <Card className="bg-red-50 border-red-200">
+            <CardContent className="p-4">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center">
+                  <WifiOff className="text-red-600 mr-2" size={20} />
+                  <div>
+                    <p className="text-red-800 font-medium">网络连接失败</p>
+                    <p className="text-red-600 text-sm">请检查网络连接后重试</p>
+                  </div>
+                </div>
+                <Button onClick={retryLoadData} variant="outline" size="sm" className="border-red-300 text-red-700 hover:bg-red-100">
+                  <RefreshCw className="mr-1" size={14} />
+                  重试
+                </Button>
+              </div>
+            </CardContent>
+          </Card>
+        </div>}
 
       {/* 场地数据汇总 */}
       <div className="p-4">
@@ -443,6 +494,27 @@ export default function Chickens(props) {
       loadChickens(currentLocation);
       setShowDeathModal(false);
     }} />
+
+      {/* 删除确认对话框 */}
+      <AlertDialog open={showDeleteConfirm} onOpenChange={setShowDeleteConfirm}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>确认删除</AlertDialogTitle>
+            <AlertDialogDescription>
+              确定要删除这条鸡只信息吗？此操作无法撤销。
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel disabled={deleteLoading}>取消</AlertDialogCancel>
+            <AlertDialogAction onClick={confirmDelete} className="bg-red-600 hover:bg-red-700" disabled={deleteLoading}>
+              {deleteLoading ? <>
+                  <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
+                  删除中...
+                </> : '确认删除'}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
 
       {/* 底部导航栏 */}
       <TabBar currentPage="chickens" location={currentLocation} $w={$w} />
